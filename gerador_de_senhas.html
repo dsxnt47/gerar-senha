@@ -1,0 +1,176 @@
+
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);">Gerador de senhas interativo com opções de comprimento e tipos de caracteres</h2>
+
+<style>
+  .container { padding: 1.5rem 0; max-width: 520px; margin: 0 auto; }
+  .title { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin: 0 0 0.25rem; }
+  .subtitle { font-size: 14px; color: var(--color-text-secondary); margin: 0 0 1.5rem; }
+  .senha-box { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 1.25rem; min-height: 60px; }
+  .senha-text { font-family: var(--font-mono); font-size: 15px; color: var(--color-text-primary); word-break: break-all; flex: 1; letter-spacing: 0.04em; }
+  .btn-copy { background: transparent; border: 0.5px solid var(--color-border-secondary); border-radius: var(--border-radius-md); padding: 6px 14px; font-size: 13px; color: var(--color-text-secondary); cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+  .btn-copy:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
+  .btn-copy.copied { color: var(--color-text-success); border-color: var(--color-border-success); }
+  .card { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 1rem; }
+  .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .label { font-size: 14px; color: var(--color-text-secondary); }
+  .value { font-size: 14px; font-weight: 500; color: var(--color-text-primary); }
+  .range { width: 100%; margin: 0; }
+  .checks { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 4px; }
+  .check-item { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .check-item input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #534AB7; }
+  .check-label { font-size: 14px; color: var(--color-text-primary); }
+  .strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+  .strength-seg { height: 4px; flex: 1; border-radius: 2px; background: var(--color-border-tertiary); transition: background 0.3s; }
+  .strength-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 4px; }
+  .btn-gerar { width: 100%; padding: 12px; background: #534AB7; color: #fff; border: none; border-radius: var(--border-radius-md); font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 0.25rem; transition: background 0.15s; }
+  .btn-gerar:hover { background: #3C3489; }
+  .btn-gerar:active { transform: scale(0.99); }
+  .historico { margin-top: 1.25rem; }
+  .hist-title { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 6px; }
+  .hist-item { font-family: var(--font-mono); font-size: 12px; color: var(--color-text-secondary); padding: 5px 10px; background: var(--color-background-secondary); border-radius: var(--border-radius-md); margin-bottom: 4px; display: flex; justify-content: space-between; align-items: center; }
+  .hist-copy { font-family: var(--font-sans); font-size: 11px; cursor: pointer; color: var(--color-text-tertiary); }
+  .hist-copy:hover { color: var(--color-text-primary); }
+</style>
+
+<div class="container">
+  <p class="title">Gerador de senhas</p>
+  <p class="subtitle">Crie senhas seguras e personalizadas</p>
+
+  <div class="senha-box">
+    <span class="senha-text" id="senha-output">Clique em gerar</span>
+    <button class="btn-copy" id="btn-copy" onclick="copiar()">Copiar</button>
+  </div>
+
+  <div class="card">
+    <div class="label-row">
+      <span class="label">Comprimento</span>
+      <span class="value" id="len-val">16 caracteres</span>
+    </div>
+    <input type="range" class="range" id="len-range" min="6" max="64" value="16" step="1" oninput="atualizarLen(this.value)">
+  </div>
+
+  <div class="card">
+    <div class="label-row" style="margin-bottom:10px;">
+      <span class="label">Tipos de caracteres</span>
+    </div>
+    <div class="checks">
+      <label class="check-item"><input type="checkbox" id="c-mai" checked><span class="check-label">Maiúsculas (A-Z)</span></label>
+      <label class="check-item"><input type="checkbox" id="c-min" checked><span class="check-label">Minúsculas (a-z)</span></label>
+      <label class="check-item"><input type="checkbox" id="c-num" checked><span class="check-label">Números (0-9)</span></label>
+      <label class="check-item"><input type="checkbox" id="c-sim" checked><span class="check-label">Símbolos (!@#$)</span></label>
+    </div>
+  </div>
+
+  <div class="card" style="padding-bottom: 0.75rem;">
+    <div class="label-row" style="margin-bottom:6px;">
+      <span class="label">Força da senha</span>
+      <span class="value" id="forca-text">—</span>
+    </div>
+    <div class="strength-bar" id="strength-bar">
+      <div class="strength-seg" id="s1"></div>
+      <div class="strength-seg" id="s2"></div>
+      <div class="strength-seg" id="s3"></div>
+      <div class="strength-seg" id="s4"></div>
+    </div>
+  </div>
+
+  <button class="btn-gerar" onclick="gerar()">Gerar senha</button>
+
+  <div class="historico" id="historico" style="display:none;">
+    <p class="hist-title">Últimas geradas</p>
+    <div id="hist-lista"></div>
+  </div>
+</div>
+
+<script>
+const MAIS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const MINS = 'abcdefghijklmnopqrstuvwxyz';
+const NUMS = '0123456789';
+const SIMS = '!@#$%^&*()-_=+[]{}|;:,.<>?';
+let historico = [];
+
+function atualizarLen(v) {
+  document.getElementById('len-val').textContent = v + ' caracteres';
+}
+
+function calcForca(senha) {
+  let pts = 0;
+  if (senha.length >= 12) pts++;
+  if (senha.length >= 20) pts++;
+  if (/[A-Z]/.test(senha)) pts++;
+  if (/[a-z]/.test(senha)) pts++;
+  if (/[0-9]/.test(senha)) pts++;
+  if (/[^A-Za-z0-9]/.test(senha)) pts++;
+  return Math.min(4, Math.floor(pts * 4 / 6));
+}
+
+function aplicarForca(nivel) {
+  const cores = ['#E24B4A','#EF9F27','#1D9E75','#534AB7'];
+  const labels = ['Fraca','Média','Boa','Forte'];
+  for (let i = 1; i <= 4; i++) {
+    const seg = document.getElementById('s' + i);
+    seg.style.background = i <= nivel ? cores[nivel - 1] : 'var(--color-border-tertiary)';
+  }
+  document.getElementById('forca-text').textContent = nivel > 0 ? labels[nivel - 1] : '—';
+  document.getElementById('forca-text').style.color = nivel > 0 ? ['#E24B4A','#BA7517','#0F6E56','#3C3489'][nivel-1] : 'var(--color-text-secondary)';
+}
+
+function gerar() {
+  const len = parseInt(document.getElementById('len-range').value);
+  const useMai = document.getElementById('c-mai').checked;
+  const useMin = document.getElementById('c-min').checked;
+  const useNum = document.getElementById('c-num').checked;
+  const useSim = document.getElementById('c-sim').checked;
+
+  let chars = '';
+  let garantidos = [];
+  if (useMai) { chars += MAIS; garantidos.push(MAIS[Math.floor(Math.random()*MAIS.length)]); }
+  if (useMin) { chars += MINS; garantidos.push(MINS[Math.floor(Math.random()*MINS.length)]); }
+  if (useNum) { chars += NUMS; garantidos.push(NUMS[Math.floor(Math.random()*NUMS.length)]); }
+  if (useSim) { chars += SIMS; garantidos.push(SIMS[Math.floor(Math.random()*SIMS.length)]); }
+
+  if (!chars) { document.getElementById('senha-output').textContent = 'Selecione ao menos um tipo'; return; }
+
+  let arr = [...garantidos];
+  while (arr.length < len) arr.push(chars[Math.floor(Math.random()*chars.length)]);
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]] = [arr[j],arr[i]];
+  }
+  const senha = arr.slice(0, len).join('');
+  document.getElementById('senha-output').textContent = senha;
+  aplicarForca(calcForca(senha));
+
+  historico.unshift(senha);
+  if (historico.length > 4) historico.pop();
+  renderHistorico();
+
+  const copy = document.getElementById('btn-copy');
+  copy.textContent = 'Copiar';
+  copy.className = 'btn-copy';
+}
+
+function copiar() {
+  const senha = document.getElementById('senha-output').textContent;
+  if (senha === 'Clique em gerar' || senha === 'Selecione ao menos um tipo') return;
+  navigator.clipboard.writeText(senha).then(() => {
+    const btn = document.getElementById('btn-copy');
+    btn.textContent = 'Copiado!';
+    btn.className = 'btn-copy copied';
+    setTimeout(() => { btn.textContent = 'Copiar'; btn.className = 'btn-copy'; }, 1800);
+  });
+}
+
+function copiarHist(senha) {
+  navigator.clipboard.writeText(senha);
+}
+
+function renderHistorico() {
+  if (historico.length === 0) return;
+  document.getElementById('historico').style.display = 'block';
+  const lista = document.getElementById('hist-lista');
+  lista.innerHTML = historico.map(s =>
+    `<div class="hist-item"><span>${s}</span><span class="hist-copy" onclick="copiarHist('${s}')">copiar</span></div>`
+  ).join('');
+}
+</script>
